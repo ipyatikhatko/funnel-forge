@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FunnelForge
 
-## Getting Started
+FunnelForge is a funnel builder and publishing product: admin UI for building pages from blocks, versioned publishing to a public URL, and analytics (views and conversions) with a dashboard. The MVP targets a small, **AWS-native**, cost-conscious deployment model.
 
-First, run the development server:
+## Stack
+
+| Layer          | Technology                                                                                                                                                         |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Application    | [Next.js](https://nextjs.org) 16 (App Router), React 19, TypeScript (strict)                                                                                       |
+| UI             | [Tailwind CSS](https://tailwindcss.com) 4, [shadcn/ui](https://ui.shadcn.com), [Framer Motion](https://www.framer.com/motion/), [Lucide](https://lucide.dev) icons |
+| Client state   | [Zustand](https://zustand-demo.pmnd.rs/)                                                                                                                           |
+| Charts         | [Recharts](https://recharts.org)                                                                                                                                   |
+| Authentication | [Better Auth](https://www.better-auth.com/)                                                                                                                        |
+| Data access    | [Drizzle ORM](https://orm.drizzle.team), PostgreSQL (`postgres` driver)                                                                                            |
+| Validation     | [Zod](https://zod.dev) 4                                                                                                                                           |
+| CI             | GitHub Actions (`lint`, `typecheck`, `build`)                                                                                                                      |
+
+The product specification in [`plan.md`](plan.md) originally described DynamoDB for core persistence. **This repository uses PostgreSQL and Drizzle** for application and auth data instead. Published funnel artifacts and static delivery remain aligned with the plan (**S3** and **CloudFront**).
+
+## Architecture
+
+- **Single Next.js fullstack repository** (no monorepo): UI, Route Handlers / API routes, and server logic live together at the repo root.
+- **Server-first rendering** where possible; client boundaries for the builder, motion, and charts.
+- **Better Auth** with Drizzle-backed storage (see environment variables in [`.env.example`](.env.example)).
+- **Target deployment**: **AWS Amplify Hosting** for the Next.js app (build and deploy from Git); separate **S3 + CloudFront** for the published funnel CDN path described in the plan. Infrastructure-as-code (e.g. CDK) can live alongside the app when added.
+
+Modular boundaries, data layout, auth, and CI/CD details are documented under [`docs/architecture/`](docs/architecture/).
+
+## Development
+
+Requirements: Node.js 20+ and [pnpm](https://pnpm.io).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+cp .env.example .env        # set DATABASE_URL and Better Auth variables
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Useful scripts: `pnpm lint`, `pnpm typecheck`, `pnpm build`, and `pnpm db:generate` / `pnpm db:migrate` / `pnpm db:studio` for Drizzle.
