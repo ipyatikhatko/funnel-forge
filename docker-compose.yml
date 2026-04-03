@@ -1,0 +1,50 @@
+# Local development: Postgres only (PaaS like Neon/Railway in production).
+#   docker compose up -d db
+#
+# Variables POSTGRES_* and POSTGRES_PORT are read from the project `.env` file
+# (same one as `pnpm dev`; copy from .env.example). Docker Compose interpolates
+# `${VAR}` in this file from `.env` automatically.
+#
+# Optional: run the Next.js image against the local db (profile "app"):
+#   docker compose --profile app up -d
+# `app` loads the rest of `.env` via `env_file`, and overrides DATABASE_URL so the
+# host is `db` inside the Compose network (credentials still come from POSTGRES_*).
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - funnel_forge_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+  app:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  funnel_forge_pgdata:

@@ -8,7 +8,7 @@
 
 - **`DATABASE_URL`** — Postgres connection string. See [`.env.example`](../../.env.example).
 
-Local development should use a real Postgres instance or a hosted dev database; **SQLite is not configured** in this repo so tooling stays single-path with production.
+Local development can use **`docker compose up -d db`** ([`docker-compose.yml`](../../docker-compose.yml)). Compose reads **`POSTGRES_USER`**, **`POSTGRES_PASSWORD`**, **`POSTGRES_DB`**, and **`POSTGRES_PORT`** from the project `.env` (see [`.env.example`](../../.env.example)) for the database container and host port mapping. That stack is **dev-only**; staging and production should use a managed database via `DATABASE_URL`, not the Compose `db` container.
 
 ## Layout
 
